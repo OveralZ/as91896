@@ -2,19 +2,82 @@
 
 # Libraries
 import math
-from tkinter import ttk
+from operator import truediv
+from re import A
+from tkinter import Widget, ttk
 import tkinter
+
+#Menu
+Items = {
+    "Potato Puff": {
+        "Price": 3.5,
+        "Tier": "S",
+    },
+    "Hot Noodles": {
+        "Price": 3.5,
+        "Tier": "S+",
+    },
+    "Spaghetti Bun": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 2": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 3": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 4": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 5": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 6": {
+        "Price": 2,
+        "Tier": "B",
+    },
+    "Placeholder Bun 7": {
+        "Price": 2,
+        "Tier": "B",
+    },
+}
 
 #GUI Setup
 root = tkinter.Tk()
 s = ttk.Style(root)
 root.geometry("300x500+150+200")
 
-mainFrameLeft = ttk.Frame(root)
-mainFrameLeft.pack(side="left", expand=True, fill="both", ipadx=10, ipady=10)
+menuCanvas = tkinter.Canvas(root)
+mainFrame = ttk.Frame(menuCanvas)
+scroll = ttk.Scrollbar(menuCanvas, orient='vertical', command=menuCanvas.yview)
+    
+mainFrame.bind(
+    "<Configure>",
+    lambda e: menuCanvas.configure(
+        scrollregion=menuCanvas.bbox("all")
+    )
+)
 
-mainFrameRight = ttk.Frame(root)
-mainFrameRight.pack(side="right", expand=True, fill="both", ipadx=10, ipady=10)
+window = menuCanvas.create_window((0, 0), window=mainFrame, anchor="nw")
+menuCanvas.configure(yscrollcommand=scroll.set)
+
+def FrameWidth(event):
+    canvas_width = event.width
+    menuCanvas.itemconfig(window, width = canvas_width-19)
+
+menuCanvas.bind('<Configure>', FrameWidth)
+
+mainFrameLeft = ttk.Frame(mainFrame)
+mainFrameRight = ttk.Frame(mainFrame)
 
 #Global Functions
 def fillConv(i):
@@ -51,28 +114,16 @@ class ItemFrame:
     def f(self):
         self.obj.configure(text=self.info["ClickText"])
 
-Items = {
-    "Potato Puff": {
-        "Price": 3.5,
-        "Tier": "S",
-    },
-    "Hot Noodles": {
-        "Price": 3.5,
-        "Tier": "S+",
-    },
-    "Spaghetti Bun": {
-        "Price": 2,
-        "Tier": "B",
-    },
-    "Placeholder Bun": {
-        "Price": 2,
-        "Tier": "B",
-    }
-}
-
 i = 0
-for Name,Info in Items.items():
-    i += 1
-    ItemFrame(Name,Info,i)
+for _ in range(1,3):
+    for Name,Info in Items.items():
+        i += 1
+        ItemFrame(Name,Info,i)
+
+menuCanvas.pack(fill="both", expand=True)
+scroll.pack(side="right",fill="both")
+
+mainFrameLeft.pack(side="left", expand=True, fill="both")
+mainFrameRight.pack(side="right", expand=True, fill="both")
 
 root.mainloop()
