@@ -31,41 +31,57 @@ def fillConv(i, mainFrameLeft, mainFrameRight):
     else: return mainFrameRight
 
 #Classes
-class Menu:
-    def __init__(self) -> None:
-        
-        self.botFrame = ttk.Frame(root,borderwidth=5,relief="sunken")
-        self.costLabel = ttk.Label(self.botFrame, text="Current Order Cost: $0", anchor="center")
-        self.costLabel.pack(expand=True,fill="both")
-        self.exportButton = ttk.Button(self.botFrame, text="Export Order", command=self.exportOrder)
-        self.exportButton.pack(fill="both",expand=True,side="right")
-        self.clearButton = ttk.Button(self.botFrame, text="Clear Order", command=self.clearOrder)
-        self.clearButton.pack(fill="both",expand=True,side="right")
-
-        self.menuCanvas = tkinter.Canvas(root)
-        self.mainFrame = ttk.Frame(self.menuCanvas)
-        self.scroll = ttk.Scrollbar(self.menuCanvas, orient='vertical', command=self.menuCanvas.yview)
+class ScrollingCanvas:
+    def __init__(self):
+        self.canvas = tkinter.Canvas(root)
+        self.frame = ttk.Frame(self.canvas)
+        self.scroll = ttk.Scrollbar(self.canvas, orient='vertical', command=self.canvas.yview)
             
-        self.mainFrame.bind(
+        self.frame.bind(
             "<Configure>",
-            lambda e: self.menuCanvas.configure(
-                scrollregion=self.menuCanvas.bbox("all")
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
             )
         )
 
-        self.window = self.menuCanvas.create_window((0, 0), window=self.mainFrame, anchor="n")
-        self.menuCanvas.configure(yscrollcommand=self.scroll.set)
+        self.window = self.canvas.create_window((0, 0), window=self.frame, anchor="n")
+        self.canvas.configure(yscrollcommand=self.scroll.set)
 
-        self.menuCanvas.bind('<Configure>', self.frameWidth)
-
-        self.mainFrameLeft = ttk.Frame(self.mainFrame)
-        self.mainFrameRight = ttk.Frame(self.mainFrame)
+        self.canvas.bind('<Configure>', self.frameWidth)
 
         pass
 
     def frameWidth(self,event):
         canvas_width = event.width
-        self.menuCanvas.itemconfig(self.window, width = canvas_width-19)
+        self.canvas.itemconfig(self.window, width = canvas_width-19)
+
+class Menu:
+    def __init__(self):
+        
+        self.botFrame = ttk.Frame(root,borderwidth=5,relief="sunken")
+        self.costLabel = ttk.Label(self.botFrame, text="Current Order Cost: $0", anchor="center")
+        self.costLabel.pack(expand=True,fill="both")
+        self.displayButton = ttk.Button(self.botFrame, text="Display Order", command=self.displayOrder)
+        self.displayButton.pack(fill="both",expand=True)
+        self.exportButton = ttk.Button(self.botFrame, text="Export Order", command=self.exportOrder)
+        self.exportButton.pack(fill="both",expand=True, side="right")
+        self.clearButton = ttk.Button(self.botFrame, text="Clear Order", command=self.clearOrder)
+        self.clearButton.pack(fill="both",expand=True, side="left")
+
+        self.menuCreate()
+
+        pass
+
+    def menuCreate(self):
+        self.menuCanvas = ScrollingCanvas()
+        self.mainFrame = self.menuCanvas.frame
+
+        self.mainFrameLeft = ttk.Frame(self.mainFrame)
+        self.mainFrameRight = ttk.Frame(self.mainFrame)
+
+        self.displayButton.configure(text="Display Order", command=self.displayOrder)
+
+        self.setup(True)
 
     def exportOrder(self):
         if len(self.Orders) > 0:
@@ -78,24 +94,68 @@ class Menu:
         self.costLabel.configure(text="Current Order Cost: $0")
         self.Orders.clear()
 
-    def setup(self):
-        i = 0
-        self.Orders = {}
-        self.totalCost = 0
+    def displayOrder(self):
+        if len(self.Orders) > 0:
+            self.menuCanvas.canvas.destroy()
+            self.displayButton.configure(text="Display Menu", command=self.menuCreate)
 
-        for _ in range(1,3):
-            for Name,Info in Items.items():
-                i += 1
-                ItemFrame(Name,Info,i,self)
-        self.menuCanvas.place(relwidth=1,relheight=0.8)
-        self.scroll.pack(side="right",fill="both")
+            self.orderCanvas = ScrollingCanvas()
+            for Name, Amt in self.Orders.items():
+                ItemLabel({"Name": Name, "Amount": Amt},self)
+            self.orderCanvas.canvas.place(relwidth=1,relheight=0.8)
+            self.orderCanvas.scroll.pack(side="right",fill="both")
+        else:
+            self.displayButton.configure(text = "Please order a product first!")
+        
 
-        self.mainFrameLeft.pack(side="left", expand=True, fill="both")
-        self.mainFrameRight.pack(side="right", expand=True, fill="both")
-        self.botFrame.place(anchor="sw",rely=1,relwidth=1,relheight=0.2)
+    def setup(self,bool):
+        if bool == True:
+            i = 0
+            for _ in range(1,3):
+                for Name,Info in Items.items():
+                    i += 1
+                    ItemFrame(Name,Info,i,self)
+            self.menuCanvas.canvas.place(relwidth=1,relheight=0.8)
+            self.menuCanvas.scroll.pack(side="right",fill="both")
+
+            self.mainFrameLeft.pack(side="left", expand=True, fill="both")
+            self.mainFrameRight.pack(side="right", expand=True, fill="both")
+            self.botFrame.place(anchor="sw",rely=1,relwidth=1,relheight=0.2)
+        else:
+            self.Orders = {}
+            self.totalCost = 0
+
+class ItemLabel:
+    def __init__(self,info,menu):
+        #Store Arguments
+        self.Menu = menu
+        self.Name = info["Name"]
+        self.Info = Items[self.Name]
+        self.Amount = info["Amount"]
+
+        #Frame Style
+        #Create Base Frame
+        self.Frame = ttk.Frame(menu.orderCanvas.frame, height=100, width=500)
+        self.Frame.pack(side="top", fill="x", ipadx=10, ipady=10)
+        self.Label = ttk.Label(self.Frame, text=self.Name + ": " + str(self.Amount), anchor="center", style="ItemFrame.TLabel")
+        self.Label.pack(expand=True,fill="both")
+        ttk.Button(self.Frame, style="ItemFrame.TButton", text="Remove from order", command=self.update).pack(fill="both",expand=True,side="right")
+
+        pass
+
+    def update(self):
+        self.Menu.Orders[self.Name] -= 1
+        self.Amount -= 1
+        self.Menu.totalCost = round(self.Menu.totalCost - float(self.Info["Price"]),2)
+        self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(self.Menu.totalCost))
+        if self.Menu.Orders[self.Name] <= 0:
+            self.Menu.Orders.pop(self.Name)
+            self.Frame.destroy()
+        else:
+            self.Label.configure(text=self.Name + ": " + str(self.Amount))
 
 class ItemFrame:
-    def __init__(self,name,info,i,menu) -> None:
+    def __init__(self,name,info,i,menu):
         #Store Arguments
         self.Info = info
         self.Name = name
@@ -122,13 +182,14 @@ class ItemFrame:
             self.Menu.Orders[self.Name] += 1
         except KeyError:
             self.Menu.Orders[self.Name] = 1
-        self.Menu.totalCost += float(self.Info["Price"])
+        self.Menu.totalCost = round(self.Menu.totalCost + float(self.Info["Price"]),2)
         self.Menu.exportButton.configure(text = "Export Order")
+        self.Menu.displayButton.configure(text = "Display Order")
         self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(self.Menu.totalCost))
         return
 
 menu = Menu()
-menu.setup()
+menu.setup(False)
 
 root.resizable(False,False)
 root.mainloop()
