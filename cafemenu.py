@@ -1,12 +1,22 @@
 # Cafe Menu, prompts login and stores existing logins, and presents the cafe menu for ordering.
 
 # Libraries
-import math
-from operator import truediv
 from re import A
-from tkinter import Widget, ttk
+from tkinter import CENTER, END, Widget, ttk
 import tkinter
-import time
+import json
+
+#Logins
+loginsjson = None
+logins = None
+try:
+    loginsjson = open("logins.json","r+")
+except FileNotFoundError:
+    loginsjson = open("logins.json","a+")
+    json.dump({},loginsjson)
+
+logins = json.load(loginsjson)
+loginsjson.close()
 
 #Menu
 from menu import Items
@@ -21,8 +31,6 @@ s.configure("ItemFrame.TFrame", background="white")
 s.configure("ItemFrame.TButton", background="#99032e")
 s.configure("ItemFrame.TLabel", background="#b0ffe9")
 s.configure("ItemFrameA.TLabel", background="#99032e", foreground="#FFFFFF")
-
-
 
 #Global Functions
 def fillConv(i, mainFrameLeft, mainFrameRight):
@@ -188,8 +196,71 @@ class ItemFrame:
         self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(self.Menu.totalCost))
         return
 
-menu = Menu()
-menu.setup(False)
+class Entry:
+    def __init__(self,frame,initialText,show):
+        self.cleared = False
+        self.show = show
+        self.text = tkinter.Entry(frame, fg="#666666")
+        self.text.bind("<FocusIn>",lambda e:self.clear())
+        self.text.insert("end",initialText)
+        pass
+    
+    def clear(self):
+        self.text.delete(0, END)
+        self.text.configure(fg="#000000")
+        self.cleared = True
+        if self.show:
+            self.text.configure(show=self.show)
+
+    def criteria(self):
+        if self.cleared == True and len(self.text.get()) > 0:
+            return True
+        else: return False
+    
+
+class LoginMenu:
+    def __init__(self):
+        self.frame = ttk.Frame(root)
+
+        self.usernameText = Entry(self.frame,"Username",None)
+        self.usernameText.text.place(relwidth=0.7,relheight=0.04,relx=0.5,rely=0.4,anchor=CENTER)
+        self.passwordText = Entry(self.frame,"Password","*")
+        self.passwordText.text.place(relwidth=0.7,relheight=0.04,relx=0.5,rely=0.45,anchor=CENTER)
+
+        self.loginButton = ttk.Button(self.frame, text="Login", command=self.login)
+        self.loginButton.place(relwidth=0.35,relheight=0.05,relx=0.5,rely=0.5,anchor="e")
+        self.registerButton = ttk.Button(self.frame, text="Register", command=self.register)
+        self.registerButton.place(relwidth=0.35,relheight=0.05,relx=0.5,rely=0.5,anchor="w")
+
+        self.frame.pack(fill="both",expand=True)
+        pass
+
+    def getInfo(self):
+        if self.usernameText.criteria() == True and self.passwordText.criteria() == True:
+            return self.usernameText.text.get(), self.passwordText.text.get()
+        else: return False, False
+    
+    def login(self):
+        user, passw = self.getInfo()
+        try:
+            if logins[user]["Password"] == passw:
+                self.frame.destroy()
+                menu = Menu()
+                menu.setup(False)
+            else: print("Invalid")
+        except KeyError:
+            print("Invalid")
+
+    def register(self):
+         user, passw = self.getInfo()
+         if user == False: return
+         logins[user] = {"Password": passw}
+
+login = LoginMenu()
 
 root.resizable(False,False)
 root.mainloop()
+
+loginsjson = open("logins.json","w")
+json.dump(logins,loginsjson)
+loginsjson.close()
