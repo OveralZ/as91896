@@ -6,6 +6,9 @@ from tkinter import CENTER, END, Widget, ttk
 import tkinter
 import json
 
+#Constants
+SEP = "----------------------"
+
 #Logins
 loginsjson = None
 logins = None
@@ -38,6 +41,13 @@ def fillConv(i, mainFrameLeft, mainFrameRight):
     if i == 0: return mainFrameLeft
     else: return mainFrameRight
 
+def priceConversion(price):
+    price = str(float(price))
+    places = price.split(".")[1]
+    if len(places) == 1:
+        price = price + "0"
+    return price
+
 #Classes
 class ScrollingCanvas:
     def __init__(self):
@@ -64,7 +74,8 @@ class ScrollingCanvas:
         self.canvas.itemconfig(self.window, width = canvas_width-19)
 
 class Menu:
-    def __init__(self):
+    def __init__(self,user):
+        self.user = user
         
         self.botFrame = ttk.Frame(root,borderwidth=5,relief="sunken")
         self.costLabel = ttk.Label(self.botFrame, text="Current Order Cost: $0", anchor="center")
@@ -93,7 +104,13 @@ class Menu:
 
     def exportOrder(self):
         if len(self.Orders) > 0:
-            print(self.Orders)
+            res = ""
+            orders = ""
+            for i,v in self.Orders.items():
+                orders += str(v)+" x "+i+" - $"+priceConversion(round(v*Items[i]["Price"],2))+"\n"
+            res = "{s}\nOrder for {name}\n{s}\nItems\n{s}\n{orders}{s}\nTotal: ${total}".format(s=SEP,name=self.user,orders=orders,total=priceConversion(self.totalCost))
+            txt = open("Order.txt","w")
+            txt.write(res)
         else:
             self.exportButton.configure(text = "Please order a product first!")
     
@@ -175,10 +192,7 @@ class ItemFrame:
         self.Frame = ttk.Frame(f, height=100, width=500, style="ItemFrame.TFrame")
         self.Frame.pack(side="top", fill="x", ipadx=10, ipady=10)
         
-        price = str(float(info["Price"]))
-        places = price.split(".")[1]
-        if len(places) == 1:
-            price = price + "0"
+        price = priceConversion(info["Price"])
         ttk.Label(self.Frame, text=name, anchor="center", style="ItemFrame.TLabel").pack(expand=True,fill="both")
         ttk.Label(self.Frame, style="ItemFrameA.TLabel", text="$" + price).pack(fill="both",expand=True,side="left")
         ttk.Button(self.Frame, style="ItemFrame.TButton", text="Add to order", command=self.update).pack(fill="both",expand=True,side="right")
@@ -245,7 +259,7 @@ class LoginMenu:
         try:
             if logins[user]["Password"] == passw:
                 self.frame.destroy()
-                menu = Menu()
+                menu = Menu(user)
                 menu.setup(False)
             else: print("Invalid")
         except KeyError:
