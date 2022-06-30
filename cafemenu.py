@@ -336,7 +336,7 @@ class LoginMenu: #The menu used to log in the program.
          if user == False:
             self.errorMessage("One or more fields are blank!")
             return
-         if logins[user]:
+         if user in logins:
             self.errorMessage("Username already in use.")
          else:
             logins[user] = {"Password": passw}
