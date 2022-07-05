@@ -1,7 +1,6 @@
 # Cafe Menu, prompts login and stores existing logins, and presents the cafe menu for ordering.
 
 # Libraries
-from re import A
 from tkinter import CENTER, END, PhotoImage, Widget, ttk
 from PIL import Image, ImageTk
 import tkinter
@@ -100,7 +99,7 @@ class Menu: #Main menu class.
         self.topBar.place(relwidth=0.8,relheight=0.005,relx=0.5,rely=0.1,anchor="s")
         self.botFrame = ttk.Frame(root,borderwidth=5,relief="sunken")
 
-        self.costLabel = ttk.Label(self.botFrame, text="Current Order Cost: $0", anchor="center")
+        self.costLabel = ttk.Label(self.botFrame, text="Current Order Cost: $0.00", anchor="center")
         self.costLabel.pack(expand=True,fill="both")
         self.displayButton = ttk.Button(self.botFrame, text="Display Order", command=self.displayOrder)
         self.displayButton.pack(fill="both",expand=True)
@@ -141,12 +140,13 @@ class Menu: #Main menu class.
             res = "{s}\nOrder for {name}\n{s}\nItems\n{s}\n{orders}{s}\nTotal: ${total}".format(s=SEP,name=self.user,orders=orders,total=priceConversion(self.totalCost))
             txt = open("Order.txt","w") #Open the order, creates it if it doesn't exist.
             txt.write(res) #Write into it.
+            self.exportButton.configure(text = "Order exported!")
         else:
             self.exportButton.configure(text = "Please order a product first!")
     
     def clearOrder(self): #Clears the order and updates data.
         self.totalCost = 0
-        self.costLabel.configure(text="Current Order Cost: $0")
+        self.costLabel.configure(text="Current Order Cost: $0.00")
         if self.currentMenu == "Order":
             self.menuCreate()
         self.Orders.clear()
@@ -210,7 +210,7 @@ class ItemLabel: #Item label class for order display.
         self.Menu.Orders[self.Name] -= 1
         self.Amount -= 1
         self.Menu.totalCost = round(self.Menu.totalCost - float(self.Info["Price"]),2)
-        self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(self.Menu.totalCost))
+        self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(priceConversion(round(self.Menu.totalCost,2))))
         if self.Menu.Orders[self.Name] <= 0:
             self.Menu.Orders.pop(self.Name)
             self.Frame.destroy()
@@ -246,7 +246,7 @@ class ItemFrame: #Item frame class for adding items to the order.
         self.Menu.totalCost = round(self.Menu.totalCost + float(self.Info["Price"]),2)
         self.Menu.exportButton.configure(text = "Export Order")
         self.Menu.displayButton.configure(text = "Display Order")
-        self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(self.Menu.totalCost))
+        self.Menu.costLabel.configure(text="Current Order Cost: ${}".format(priceConversion(round(self.Menu.totalCost,2))))
         return
 
 class Entry: #Entries for the login and password.
